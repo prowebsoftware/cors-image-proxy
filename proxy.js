@@ -23,35 +23,49 @@ function processRequest(req, res, proxy, new_req){
 }
 
 httpProxy.createServer(function (req, res, proxy) {
-  var url_path = req.url.slice(1)
-  if(url_path == "crossdomain.xml"){
-    proxy.proxyRequest(req, res, {
-      host: '127.0.0.1',
-      port: 9000
-    });
-  }
-  else{
-    new_req = url.parse(url_path)
-    if(new_req.host == "avatars.io"){
-      request({
-        url: new_req.href,
-        followRedirect:false
-      }, function(error, response, body){
-        var final_req = url.parse(response.headers.location);
-        processRequest(req, res, proxy, final_req);
-      });
-    }
-    else{
-      if(new_req.host && new_req.host.match(/dgm59|cloudinary|twimg|instagram|facebook|fbcdn|distillery|qrserver|igcdn|naver/)){
-        processRequest(req, res, proxy, new_req);
-        console.log("allowed " + new_req.host)
-      }else{
-        console.log("disallowed " + new_req.host)
-        res.writeHead(400);
-        res.write('Not Allowed');
-        res.end();
+  if (req.method === 'OPTIONS') {
+      console.log('!OPTIONS');
+      var headers = {};
+      // IE8 does not allow domains to be specified, just the *
+      // headers["Access-Control-Allow-Origin"] = req.headers.origin;
+      headers["Access-Control-Allow-Origin"] = "*";
+      headers["Access-Control-Allow-Methods"] = "POST, GET, PUT, DELETE, OPTIONS";
+      headers["Access-Control-Allow-Credentials"] = true;
+      headers["Access-Control-Max-Age"] = '86400'; // 24 hours
+      headers["Access-Control-Allow-Headers"] = "X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept";
+      res.writeHead(200, headers);
+      res.end();
+  } else {
+      var url_path = req.url.slice(1)
+      if(url_path == "crossdomain.xml"){
+        proxy.proxyRequest(req, res, {
+          host: '127.0.0.1',
+          port: 9000
+        });
       }
-    }
+      else{
+        new_req = url.parse(url_path)
+        if(new_req.host == "avatars.io"){
+          request({
+            url: new_req.href,
+            followRedirect:false
+          }, function(error, response, body){
+            var final_req = url.parse(response.headers.location);
+            processRequest(req, res, proxy, final_req);
+          });
+        }
+        else{
+          if(new_req.host && new_req.host.match(/dgm59|cloudinary|twimg|instagram|facebook|fbcdn|distillery|qrserver|igcdn|naver/)){
+            processRequest(req, res, proxy, new_req);
+            console.log("allowed " + new_req.host)
+          }else{
+            console.log("disallowed " + new_req.host)
+            res.writeHead(400);
+            res.write('Not Allowed');
+            res.end();
+          }
+        }
+      }
   }
 }).listen(process.env.PORT || 8000);
 
