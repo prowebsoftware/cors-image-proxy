@@ -53,7 +53,7 @@ httpProxy.createServer(function (req, res, proxy) {
       }
     }
   }
-}).listen(8000);
+}).listen(process.env.port || 8000);
 
 http.createServer(function (req, res) {
   res.writeHead(200, { 'Content-Type': 'text/xml' });
